@@ -36,7 +36,7 @@ GitHub:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("bosangir/llmCoder")
+remotes::install_github("neu-data/llmCoder")
 ```
 
 You also need an API key for an LLM provider supported by
