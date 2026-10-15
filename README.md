@@ -2,8 +2,8 @@
 <!-- README.md is generated from README.Rmd. Please edit that file and rebuild with devtools::build_readme() -->
 
 <div align="center">
-&#10;<img src="https://raw.githubusercontent.com/neu-data/.github/main/assets/banner.svg" alt="Neudata Consulting Ltd" width="100%" />
-&#10;</div>
+<img src="https://raw.githubusercontent.com/neu-data/.github/main/assets/banner.svg" alt="Neudata Consulting Ltd" width="100%" />
+</div>
 
 # llmCoder <img src="man/figures/logo.png" align="right" height="139" alt="llmCoder logo" />
 
@@ -240,6 +240,6 @@ MIT © Neudata Consulting Ltd
 ------------------------------------------------------------------------
 
 <div align="center">
-&#10;**Neudata Consulting Ltd** · *Insight. Impact. Innovation.*
-[www.neu-data.com](https://www.neu-data.com) · [contact@neu-data.com](mailto:contact@neu-data.com)
-&#10;</div>
+<strong>Neudata Consulting Ltd</strong> · <em>Insight. Impact. Innovation.</em><br />
+<a href="https://www.neu-data.com">www.neu-data.com</a> · <a href="mailto:contact@neu-data.com">contact@neu-data.com</a>
+</div>
