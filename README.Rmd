@@ -1,0 +1,196 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file and rebuild with devtools::build_readme() -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+options(width = 100, pillar.width = 100)
+```
+
+# llmCoder
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+**Automated mixed-methods coding with large language models.**
+
+llmCoder applies a qualitative codebook to text with an LLM, then tests those
+codes against your participants' quantitative data, all in one reproducible
+R workflow.
+
+Packages such as quallmer use LLMs to code text, and tools like NVivo and
+MAXQDA let you cross-tabulate hand-applied codes against participant
+attributes. llmCoder combines the two. It codes the text automatically, links
+the codes to numeric metadata such as session logs, survey scores or
+outcomes, and tells you which themes go with real differences in behaviour.
+It also lets you check the LLM's coding against a human coder before you
+trust any of it.
+
+```
+transcripts ──► llm_auto_code() ──► code_agreement()     is the LLM coding reliable?
+                       │
+behavioural logs ──────┴──────────► cross_tab_themes()   which themes go with metric shifts?
+                                           │
+                                           └──► plot_theme_impact()
+```
+
+## Installation
+
+llmCoder is not on CRAN yet. Install the development version from GitHub:
+
+``` r
+# install.packages("remotes")
+remotes::install_github("your-username/llmCoder")
+```
+
+You also need an API key for an LLM provider supported by
+[ellmer](https://ellmer.tidyverse.org), for example `OPENAI_API_KEY` or
+`ANTHROPIC_API_KEY` in your `.Renviron`.
+
+## Example
+
+The package includes a simulated dataset and an offline keyword coder, so
+you can try the whole workflow without an API key.
+
+```{r data}
+library(llmCoder)
+
+users <- mock_mixed_data(n_users = 120, seed = 42)
+users
+```
+
+### 1. Code the text
+
+A codebook maps each code name to a definition. Clear, specific definitions
+give much more reliable coding than bare labels.
+
+```{r codebook}
+codebook <- c(
+  UI_Confusion        = "The user reports being lost, confused, or unable to find something in the interface",
+  Positive_Experience = "The user expresses satisfaction, praise, or enjoyment of the product",
+  Feature_Request     = "The user asks for a feature or capability that does not currently exist"
+)
+```
+
+```{r llm-code, eval = FALSE}
+coded <- llm_auto_code(
+  users, user_id, transcript_feedback, codebook,
+  chat = ellmer::chat_openai(model = "gpt-4.1-mini")
+)
+```
+
+Each text is coded in its own conversation, so earlier transcripts never
+influence later ones. Requests run in parallel (`max_active`), and the
+result has one `TRUE`/`FALSE` column per code. Any ellmer chat works, for
+example `ellmer::chat_anthropic()`, `ellmer::chat_google_gemini()`, or a
+local model through `ellmer::chat_ollama()`.
+
+To run the example offline, swap the LLM for the demo coder. The rest of
+this README uses its output:
+
+```{r mock-code}
+coded <- llm_auto_code(users, user_id, transcript_feedback, codebook,
+                       coder = mock_coder())
+coded[, c("user_id", names(codebook))]
+```
+
+### 2. Check the coding against a human
+
+Before analysing the codes, have a person code a random sample of the texts
+and compare:
+
+```{r agreement, eval = FALSE}
+set.seed(1)
+to_check <- coded[sample(nrow(coded), 40), c("user_id", "transcript_feedback")]
+# ...a human adds UI_Confusion, Positive_Experience and Feature_Request columns...
+
+code_agreement(coded, human_coded)
+```
+
+For each theme you get percent agreement, **Cohen's kappa** with a
+confidence interval, and the LLM's **precision, recall and F1** against the
+human codes. Low recall means the LLM misses the theme, and low precision
+means it over-applies it; either is usually fixed by sharpening the code's
+definition. As a rough guide, kappa above 0.6 is substantial agreement and
+above 0.8 near-perfect.
+
+### 3. Link the themes to the numbers
+
+```{r cross-tab}
+results <- cross_tab_themes(coded, session_duration_sec)
+print(results, width = Inf)
+```
+
+```{r interpretation, include = FALSE}
+confusion <- results[results$theme == "UI_Confusion", ]
+```
+
+Users who describe UI confusion spend about
+`r round(confusion$difference)` seconds longer per session. Feature
+requests, which the simulation adds at random, should show no effect.
+
+For each theme, `cross_tab_themes()` runs Welch's t-test (present vs
+absent), reports the mean difference with a 95% confidence interval and
+Cohen's d, and adjusts p-values across themes for multiple comparisons
+(Benjamini–Hochberg by default, see `p_adjust`). Themes too rare to test get
+`NA` rather than a misleading result.
+
+### 4. Plot it
+
+```{r impact, fig.width = 8, fig.height = 4.5, dpi = 110, fig.alt = "Dot plot of the mean difference in session duration for each theme, with confidence intervals; UI confusion and positive experience are significant, feature request is not."}
+plot_theme_impact(results)
+```
+
+## Segment-level transcripts
+
+Interview transcripts are often coded by segment, with several rows per
+participant, while behavioural metrics have one row per participant. Code
+the segments, then pass the participant table as `metrics`:
+
+```{r segments, eval = FALSE}
+coded_segments <- llm_auto_code(segments, participant_id, segment_text, codebook,
+                                chat = ellmer::chat_openai())
+
+cross_tab_themes(coded_segments, minutes_active, metrics = participant_logs)
+```
+
+A theme counts as present for a participant if it appears in any of their
+segments. The codes are then joined to `participant_logs` by
+`participant_id`.
+
+## Functions
+
+| Function | Purpose |
+|---|---|
+| `llm_auto_code()` | Apply a codebook to text with an LLM (or any custom coder) |
+| `code_agreement()` | Validate LLM codes against human codes: kappa, precision, recall, F1 |
+| `cross_tab_themes()` | Test whether a numeric metric differs when each theme is present |
+| `plot_theme_impact()` | Plot metric differences per theme with confidence intervals |
+| `mock_mixed_data()` | Simulated users with metrics and feedback text |
+| `mock_coder()` | Offline keyword coder for demos and tests |
+
+## Good practice
+
+- **Validate first.** Report `code_agreement()` results alongside any
+  analysis. Reviewers will expect to see them.
+- **Treat results as associations.** A theme that goes with longer sessions
+  does not cause them. `cross_tab_themes()` describes group differences and
+  does not adjust for confounders. For that, fit your own model on the coded
+  data.
+- **Pin the model.** Name the exact model version in `chat` and record it,
+  because LLM coding can change between model releases.
+- **Mind the data.** Texts are sent to the LLM provider. Check that this is
+  allowed under your ethics approval and data agreements, or use a local
+  model via `ellmer::chat_ollama()`.
+
+## License
+
+MIT

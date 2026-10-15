@@ -1,0 +1,26 @@
+Package: llmCoder
+Title: Automated Mixed-Methods Coding with Large Language Models
+Version: 0.0.0.9000
+Authors@R:
+    person("B.", "Osangir", email = "b.osangir@gmail.com", role = c("aut", "cre"))
+Description: Applies a qualitative codebook to text with large language models
+    via 'ellmer' structured output, then links the resulting theme codes to
+    participants' quantitative metadata. Tests and visualises whether metric
+    values differ when a theme is present, bridging qualitative coding and
+    quantitative analysis in one workflow.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    ellmer (>= 0.3.0),
+    ggplot2 (>= 3.5.0),
+    rlang,
+    stats,
+    tibble
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
