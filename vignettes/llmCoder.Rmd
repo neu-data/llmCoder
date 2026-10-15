@@ -1,0 +1,181 @@
+---
+title: "Getting started with llmCoder"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with llmCoder}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+options(pillar.width = 90)
+```
+
+llmCoder links what people *say* to what they *do*. It applies a
+qualitative codebook to text with a large language model, checks the coding
+against a human coder, and then tests whether each theme goes with a
+difference in a quantitative metric.
+
+This article walks through the whole workflow on simulated data. Every step
+runs offline with `mock_coder()`, a keyword-based stand-in for the LLM, so
+no API key is needed. The step that calls a real model is shown but not run.
+
+```{r setup}
+library(llmCoder)
+```
+
+## The data
+
+`mock_mixed_data()` simulates users from three hidden profiles. Frustrated
+users have long sessions and many errors, efficient users have short clean
+sessions, and casual users sit in between. Each user leaves a line of
+feedback whose wording depends on their profile. Feature requests are added
+at random, so they should show no real effect.
+
+```{r data}
+users <- mock_mixed_data(n_users = 150, seed = 2026)
+users
+```
+
+The `profile` column is the ground truth. Real data would not have it; here
+it lets us check that the workflow recovers what was built in.
+
+## Step 1: write a codebook
+
+A codebook maps each code name to a definition. The definitions are what
+the LLM sees, so make them specific: what counts, and what does not. Code
+names become column names, so they must be syntactic R names.
+
+```{r codebook}
+codebook <- c(
+  UI_Confusion        = "The user reports being lost, confused, or unable to find something in the interface",
+  Positive_Experience = "The user expresses satisfaction, praise, or enjoyment of the product",
+  Feature_Request     = "The user asks for a feature or capability that does not currently exist"
+)
+```
+
+## Step 2: code the text
+
+With a real LLM, pass any [ellmer](https://ellmer.tidyverse.org) chat
+object. Pin the exact model so the coding can be reproduced:
+
+```{r llm, eval = FALSE}
+coded <- llm_auto_code(
+  users, user_id, transcript_feedback, codebook,
+  chat = ellmer::chat_openai(model = "gpt-4.1-mini")
+)
+```
+
+Each text is coded in its own conversation, so earlier texts cannot
+influence later ones. The first text is sent on its own: if the API key,
+account credit or model name is wrong, you get an error within seconds
+rather than a stalled batch. The remaining texts are sent in parallel
+(`max_active` at a time). Empty or missing texts are not sent and get `NA`.
+
+Here we use the offline coder instead:
+
+```{r code}
+coded <- llm_auto_code(users, user_id, transcript_feedback, codebook,
+                       coder = mock_coder())
+coded[, c("user_id", names(codebook))]
+```
+
+## Step 3: check the coding against a human
+
+Before trusting automated codes, have a person code a random sample blind
+and compare. To illustrate, we simulate a human coder who follows the
+hidden profiles but makes occasional mistakes:
+
+```{r human}
+set.seed(1)
+sample_rows <- sample(nrow(users), 50)
+flip <- function(x, rate = 0.08) xor(x, runif(length(x)) < rate)
+
+human <- data.frame(
+  user_id = users$user_id[sample_rows],
+  UI_Confusion = flip(users$profile[sample_rows] == "frustrated"),
+  Positive_Experience = flip(users$profile[sample_rows] == "efficient"),
+  Feature_Request = flip(grepl("wish|please add|would be great",
+                               users$transcript_feedback[sample_rows]))
+)
+
+code_agreement(coded, human)
+```
+
+How to read it:
+
+- **kappa** corrects raw agreement for chance. As a rough guide, above 0.6
+  is substantial and above 0.8 near-perfect.
+- **precision** is the share of the LLM's "present" codes that the human
+  agrees with. Low precision means the LLM over-applies the code.
+- **recall** is the share of the human's "present" codes that the LLM also
+  found. Low recall means the LLM misses the theme.
+
+If a code scores poorly, sharpen its definition and re-code. Report these
+figures alongside your analysis.
+
+## Step 4: link themes to the metrics
+
+`cross_tab_themes()` compares the metric between units with and without
+each theme, using Welch's t-test, and adjusts the p-values for the number
+of themes tested (Benjamini–Hochberg by default).
+
+```{r cross-tab}
+results <- cross_tab_themes(coded, session_duration_sec)
+results
+```
+
+The codebook and ID column are remembered from `llm_auto_code()`, so you
+only name the metric. Run it again for other metrics:
+
+```{r errors}
+cross_tab_themes(coded, errors_encountered)[, c("theme", "difference", "p_adjusted", "significant")]
+```
+
+These are associations, not causal effects. Confused users have longer
+sessions, but the comparison does not adjust for anything else. For that,
+fit your own model on `coded`.
+
+## Step 5: plot
+
+```{r plot, fig.alt = "Dot plot of the mean difference in session duration per theme, with confidence intervals."}
+plot_theme_impact(results)
+```
+
+## Segment-level transcripts
+
+Interviews are often coded by segment, with many rows per participant,
+while the metrics have one row per participant. Code the segments as they
+are, then pass the participant table as `metrics`. A theme counts as
+present for a participant if it appears in any of their segments:
+
+```{r segments}
+segments <- data.frame(
+  participant = c("P1", "P1", "P2", "P2", "P3", "P4", "P4", "P5", "P6"),
+  segment_id  = 1:9,
+  text = c("It was fine at first.", "Then I got completely lost.",
+           "Everything was clean and fast.", "I love the export.",
+           "So confusing, I could not find the settings.",
+           "Normal day.", "Nothing to report.",
+           "I got lost twice.", "It works."),
+  stringsAsFactors = FALSE
+)
+logs <- data.frame(participant = paste0("P", 1:6),
+                   minutes_active = c(42, 12, 39, 15, 45, 14))
+
+coded_segments <- llm_auto_code(segments, participant, text,
+                                c("UI_Confusion", "Positive_Experience"),
+                                coder = mock_coder())
+
+cross_tab_themes(coded_segments, minutes_active, metrics = logs)
+```
+
+To check agreement at segment level, give each segment its own ID and
+pass it as `id_col`, e.g. `code_agreement(coded_segments, human, id_col = "segment_id")`.
+
+## Data protection
+
+With a hosted LLM, every text is sent to the provider. Check that this is
+allowed under your ethics approval and data agreements before coding real
+participant data, or run a local model with `ellmer::chat_ollama()`.

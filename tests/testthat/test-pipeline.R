@@ -107,3 +107,33 @@ test_that("a non-Chat object is rejected", {
   df <- mock_mixed_data(5, seed = 3)
   expect_error(llm_auto_code(df, user_id, transcript_feedback, codes, chat = "gpt"), "Chat")
 })
+
+test_that("a failing first LLM request stops the batch with a clear error", {
+  calls <- 0
+  fake <- structure(new.env(), class = "Chat")
+  fake$clone <- function() fake
+  fake$set_turns <- function(turns) invisible(fake)
+  fake$get_system_prompt <- function() "sys"
+  fake$chat_structured <- function(...) {
+    calls <<- calls + 1
+    stop("HTTP 429 Too Many Requests: no credits remaining")
+  }
+  df <- mock_mixed_data(5, seed = 3)
+  expect_error(
+    llm_auto_code(df, user_id, transcript_feedback, codes, chat = fake),
+    "first LLM request failed"
+  )
+  expect_equal(calls, 1)
+})
+
+test_that("a single text is coded by the probe request alone", {
+  fake <- structure(new.env(), class = "Chat")
+  fake$clone <- function() fake
+  fake$set_turns <- function(turns) invisible(fake)
+  fake$get_system_prompt <- function() "sys"
+  fake$chat_structured <- function(...) list(UI_Confusion = TRUE, Feature_Request = FALSE)
+  df <- data.frame(id = 1, txt = "I got lost")
+  coded <- llm_auto_code(df, id, txt, c("UI_Confusion", "Feature_Request"), chat = fake)
+  expect_equal(coded$UI_Confusion, TRUE)
+  expect_equal(coded$Feature_Request, FALSE)
+})

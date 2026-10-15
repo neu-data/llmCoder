@@ -1,0 +1,52 @@
+url: https://neu-data.github.io/llmCoder/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#055F56"
+    secondary: "#0B376C"
+    navbar-bg: "#04242F"
+    link-color: "#0B376C"
+    headings-color: "#04242F"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Source Sans 3"}
+    code_font: {google: "JetBrains Mono"}
+
+navbar:
+  bg: primary
+  type: dark
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, neudata, github]
+  components:
+    neudata:
+      icon: fa-globe
+      href: https://www.neu-data.com
+      aria-label: Neudata website
+
+footer:
+  structure:
+    left: neudata
+    right: built_with
+  components:
+    neudata: "Developed by [**Neudata Consulting Ltd**](https://www.neu-data.com) · *Insight. Impact. Innovation.*"
+
+home:
+  sidebar:
+    structure: [links, license, community, citation, authors, dev]
+
+reference:
+  - title: Code text with an LLM
+    contents:
+      - llm_auto_code
+  - title: Validate the coding
+    contents:
+      - code_agreement
+  - title: Link themes to quantitative data
+    contents:
+      - cross_tab_themes
+      - plot_theme_impact
+  - title: Try it offline
+    contents:
+      - mock_mixed_data
+      - mock_coder

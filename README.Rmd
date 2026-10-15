@@ -14,11 +14,21 @@ knitr::opts_chunk$set(
 options(width = 100, pillar.width = 100)
 ```
 
-# llmCoder
+```{=html}
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/neu-data/.github/main/assets/banner.svg" alt="Neudata Consulting Ltd" width="100%" />
+
+</div>
+```
+
+# llmCoder <img src="man/figures/logo.png" align="right" height="139" alt="llmCoder logo" />
 
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/neu-data/llmCoder/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/neu-data/llmCoder/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://img.shields.io/badge/docs-pkgdown-055F56?style=flat)](https://neu-data.github.io/llmCoder/)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-0B376C.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+![Neudata](https://img.shields.io/badge/Neudata-R%20package-04242F?style=flat)
 <!-- badges: end -->
 
 **Automated mixed-methods coding with large language models.**
@@ -192,6 +202,26 @@ segments. The codes are then joined to `participant_logs` by
   allowed under your ethics approval and data agreements, or use a local
   model via `ellmer::chat_ollama()`.
 
+## Learn more
+
+- [Getting started](https://neu-data.github.io/llmCoder/articles/llmCoder.html):
+  the full workflow, including a worked agreement check and segment-level
+  coding.
+- [quant2qual](https://github.com/neu-data/quant2qual), the companion
+  Neudata package, goes the other way: it turns behavioural metrics into
+  qualitative case-study prose.
+
 ## License
 
-MIT
+MIT © Neudata Consulting Ltd
+
+---
+
+```{=html}
+<div align="center">
+
+**Neudata Consulting Ltd** · *Insight. Impact. Innovation.*
+[www.neu-data.com](https://www.neu-data.com) · [contact@neu-data.com](mailto:contact@neu-data.com)
+
+</div>
+```

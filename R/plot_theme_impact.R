@@ -38,14 +38,14 @@ plot_theme_impact <- function(cross_tab_data, metric_label = NULL) {
   )
 
   ggplot2::ggplot(plot_df, ggplot2::aes(x = .data$difference, y = .data$label)) +
-    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = "grey55") +
+    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = "#8A99A3") +
     ggplot2::geom_linerange(
       ggplot2::aes(xmin = .data$conf_low, xmax = .data$conf_high, colour = .data$status),
       linewidth = 1
     ) +
     ggplot2::geom_point(ggplot2::aes(size = .data$n_present, colour = .data$status)) +
     ggplot2::scale_colour_manual(
-      values = c("Significant (adjusted)" = "#c0392b", "Not significant" = "#5d6d7e"),
+      values = c("Significant (adjusted)" = "#055F56", "Not significant" = "#8A99A3"),
       drop = FALSE
     ) +
     ggplot2::scale_size_area(max_size = 8) +
@@ -54,7 +54,9 @@ plot_theme_impact <- function(cross_tab_data, metric_label = NULL) {
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_blank(),
       legend.position = "bottom",
-      plot.title = ggplot2::element_text(face = "bold")
+      plot.title = ggplot2::element_text(face = "bold", colour = "#04242F"),
+      plot.subtitle = ggplot2::element_text(colour = "#055F56"),
+      axis.title = ggplot2::element_text(colour = "#04242F")
     ) +
     ggplot2::labs(
       title = "Theme impact on a quantitative metric",
@@ -65,6 +67,3 @@ plot_theme_impact <- function(cross_tab_data, metric_label = NULL) {
       size = "Units with theme"
     )
 }
-
-#' @importFrom rlang .data
-NULL

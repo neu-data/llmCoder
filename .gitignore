@@ -1,6 +1,9 @@
-.Rproj.user
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+.Renviron
+docs/
+inst/doc
+*.tar.gz
 *.Rcheck/
-llmCoder_*.tar.gz
