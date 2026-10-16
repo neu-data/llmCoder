@@ -4,7 +4,7 @@
 # The motif is the package in one picture: lines of transcript with
 # NVivo-style coding stripes beside them, and on the right a small forest
 # plot whose points share the stripes' colours, i.e. each code linked to its
-# effect on a metric. Flat colours in a print style, a light "llm" and heavy
+# effect on a metric. Flat indigo risograph-style colours, a light "llm" and heavy
 # "Coder" so the name cannot be misread, and neu-data.com along the
 # lower-right edge in the style of the tidyverse stickers.
 #
@@ -14,7 +14,7 @@
 
 library(grid)
 
-PALETTE <- "paper"
+PALETTE <- "indigo"
 
 systemfonts::register_variant("SegoeLight", "Segoe UI", weight = "light")
 systemfonts::register_variant("SegoeHeavy", "Segoe UI", weight = "heavy")
